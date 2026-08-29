@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>ShiftFlow - Import WhatsApp</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+            background: #f5f7fb;
+            color: #111827;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow:
+                0 10px 30px
+                rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            margin-top: 0;
+            margin-bottom: 5px;
+            font-size: 25px;
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 25px;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: #dcfce7;
+            color: #166534;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .status.disconnected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .qr-container {
+            margin-top: 25px;
+            padding: 25px;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            text-align: center;
+        }
+
+        .qr-container img {
+            width: 280px;
+            height: 280px;
+            max-width: 100%;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .instructions {
+            color: #6b7280;
+            line-height: 1.6;
+        }
+
+        .contacts-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        .contacts-count {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        button {
+            border: 0;
+            cursor: pointer;
+            border-radius: 8px;
+            padding: 10px 15px;
+            font-weight: 600;
+        }
+
+        .refresh {
+            background: #111827;
+            color: white;
+        }
+
+        .refresh:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .search {
+            width: 100%;
+            height: 45px;
+            padding: 0 14px;
+            border:
+                1px solid #d1d5db;
+            border-radius: 9px;
+            outline: none;
+            font-size: 15px;
+            margin-bottom: 15px;
+        }
+
+        .search:focus {
+            border-color: #2563eb;
+        }
+
+        .contact-list {
+            border:
+                1px solid #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .contact {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 15px;
+            border-bottom:
+                1px solid #f3f4f6;
+        }
+
+        .contact:last-child {
+            border-bottom: 0;
+        }
+
+        .contact:hover {
+            background: #f9fafb;
+        }
+
+        .contact input {
+            width: 17px;
+            height: 17px;
+        }
+
+        .avatar {
+            width: 42px;
+            height: 42px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: #e5e7eb;
+            font-weight: 700;
+            color: #4b5563;
+        }
+
+        .contact-info {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .contact-name {
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .contact-number {
+            color: #6b7280;
+            font-size: 14px;
+            margin-top: 3px;
+        }
+
+        .empty {
+            padding: 50px 20px;
+            text-align: center;
+            color: #6b7280;
+        }
+
+        .bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 18px;
+        }
+
+        .selected {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .import {
+            background: #2563eb;
+            color: white;
+        }
+
+        .import:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            padding: 50px 20px;
+            text-align: center;
+            color: #6b7280;
+        }
+
+        .refresh-result {
+            margin-top: 10px;
+            min-height: 20px;
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+    <div class="card">
+
+        <h1>
+            Importer depuis WhatsApp
+        </h1>
+
+        <div class="subtitle">
+            Test Baileys / ShiftFlow
+        </div>
+
+
+        <div
+            id="status"
+            class="status disconnected"
+        >
+            🔄 Connexion...
+        </div>
+
+
+        <div
+            id="qrSection"
+            class="qr-container"
+            style="display: none;"
+        >
+
+            <h2>
+                Connectez votre WhatsApp
+            </h2>
+
+            <p class="instructions">
+
+                Ouvrez WhatsApp sur votre téléphone,
+                puis allez dans :
+
+                <br>
+
+                <strong>
+                    Paramètres → Appareils connectés
+                    → Connecter un appareil
+                </strong>
+
+            </p>
+
+
+            <img
+                id="qr"
+                src=""
+                alt="QR Code WhatsApp"
+            >
+
+
+            <p class="instructions">
+
+                Le QR code se met automatiquement
+                à jour.
+
+            </p>
+
+        </div>
+
+
+        <div id="contactsSection">
+
+            <div class="contacts-header">
+
+                <div>
+
+                    <h2>
+                        Contacts
+                    </h2>
+
+                    <div
+                        id="count"
+                        class="contacts-count"
+                    >
+                        0 contact(s)
+                    </div>
+
+                    <div
+                        id="refreshResult"
+                        class="refresh-result"
+                    ></div>
+
+                </div>
+
+
+                <button
+                    id="refreshButton"
+                    class="refresh"
+                    onclick="refreshContacts()"
+                >
+                    Actualiser
+                </button>
+
+            </div>
+
+
+            <input
+                id="search"
+                class="search"
+                type="text"
+                placeholder="Rechercher un contact..."
+                oninput="renderContacts()"
+            >
+
+
+            <div
+                id="contactList"
+                class="contact-list"
+            >
+
+                <div class="loading">
+                    Chargement...
+                </div>
+
+            </div>
+
+
+            <div class="bottom">
+
+                <div
+                    id="selectedCount"
+                    class="selected"
+                >
+                    0 sélectionné(s)
+                </div>
+
+
+                <button
+                    id="importButton"
+                    class="import"
+                    onclick="importContacts()"
+                    disabled
+                >
+                    Importer
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    let contacts = [];
+
+    let selected = new Set();
+
+    let connected = false;
+
+    let statusLoading = false;
+
+    let contactsLoading = false;
+
+
+    // ========================================================
+    // STATUS
+    // ========================================================
+
+    async function loadStatus() {
+
+        if (statusLoading) {
+
+            return;
+
+        }
+
+
+        statusLoading =
+            true;
+
+
+        try {
+
+            const response =
+                await fetch(
+                    "/status",
+                    {
+                        cache:
+                            "no-store",
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            connected =
+                data.connected;
+
+
+            const status =
+                document.getElementById(
+                    "status"
+                );
+
+
+            const qrSection =
+                document.getElementById(
+                    "qrSection"
+                );
+
+
+            if (data.connected) {
+
+                status.textContent =
+                    "✅ WhatsApp connecté";
+
+                status.className =
+                    "status";
+
+
+                qrSection.style.display =
+                    "none";
+
+
+                await loadContacts();
+
+
+                return;
+
+            }
+
+
+            status.textContent =
+                "⚠️ WhatsApp non connecté";
+
+            status.className =
+                "status disconnected";
+
+
+            if (
+                data.hasQR &&
+                data.qr
+            ) {
+
+                qrSection.style.display =
+                    "block";
+
+
+                document.getElementById(
+                    "qr"
+                ).src =
+                    data.qr;
+
+            } else {
+
+                qrSection.style.display =
+                    "block";
+
+            }
+
+
+        } catch (error) {
+
+            console.error(
+                "Erreur status :",
+                error
+            );
+
+        } finally {
+
+            statusLoading =
+                false;
+
+        }
+
+    }
+
+
+    // ========================================================
+    // CONTACTS
+    // ========================================================
+
+    async function loadContacts() {
+
+        if (contactsLoading) {
+
+            return;
+
+        }
+
+
+        contactsLoading =
+            true;
+
+
+        try {
+
+            const response =
+                await fetch(
+                    "/contacts",
+                    {
+                        cache:
+                            "no-store",
+                    }
+                );
+
+
+            if (!response.ok) {
+
+                return;
+
+            }
+
+
+            const newContacts =
+                await response.json();
+
+
+            contacts =
+                Array.isArray(
+                    newContacts
+                )
+                    ? newContacts
+                    : [];
+
+
+            document.getElementById(
+                "count"
+            ).textContent =
+                `${contacts.length} contact(s)`;
+
+
+            renderContacts();
+
+
+        } catch (error) {
+
+            console.error(
+                "Erreur contacts :",
+                error
+            );
+
+        } finally {
+
+            contactsLoading =
+                false;
+
+        }
+
+    }
+
+
+    // ========================================================
+    // AFFICHER CONTACTS
+    // ========================================================
+
+    function renderContacts() {
+
+        const list =
+            document.getElementById(
+                "contactList"
+            );
+
+
+        const searchInput =
+            document.getElementById(
+                "search"
+            );
+
+
+        const search =
+            searchInput
+                ? searchInput.value
+                    .toLowerCase()
+                    .trim()
+                : "";
+
+
+        const filtered =
+            contacts.filter(
+                (contact) => {
+
+                    const value =
+                        `${contact.name || ""} ${contact.number || ""}`
+                            .toLowerCase();
+
+
+                    return value.includes(
+                        search
+                    );
+
+                }
+            );
+
+
+        if (
+            filtered.length === 0
+        ) {
+
+            list.innerHTML = `
+                <div class="empty">
+                    Aucun contact disponible.
+                </div>
+            `;
+
+
+            updateSelectedCount();
+
+            return;
+
+        }
+
+
+        list.innerHTML =
+            filtered.map(
+                (contact) => {
+
+                    const checked =
+                        selected.has(
+                            contact.id
+                        );
+
+
+                    const initials =
+                        (
+                            contact.name ||
+                            "?"
+                        )
+                        .slice(0, 2)
+                        .toUpperCase();
+
+
+                    return `
+                        <label class="contact">
+
+                            <input
+                                type="checkbox"
+                                ${checked ? "checked" : ""}
+                                onchange="toggleContact('${escapeAttribute(contact.id)}')"
+                            >
+
+                            <div class="avatar">
+                                ${escapeHtml(initials)}
+                            </div>
+
+                            <div class="contact-info">
+
+                                <div class="contact-name">
+                                    ${escapeHtml(contact.name)}
+                                </div>
+
+                                <div class="contact-number">
+                                    ${
+                                        contact.number
+                                            ? "+" + escapeHtml(contact.number)
+                                            : "Numéro indisponible"
+                                    }
+                                </div>
+
+                            </div>
+
+                        </label>
+                    `;
+
+                }
+            )
+            .join("");
+
+
+        updateSelectedCount();
+
+    }
+
+
+    // ========================================================
+    // CHECKBOX
+    // ========================================================
+
+    function toggleContact(id) {
+
+        if (
+            selected.has(id)
+        ) {
+
+            selected.delete(id);
+
+        } else {
+
+            selected.add(id);
+
+        }
+
+
+        updateSelectedCount();
+
+    }
+
+
+    // ========================================================
+    // COMPTEUR SÉLECTION
+    // ========================================================
+
+    function updateSelectedCount() {
+
+        document.getElementById(
+            "selectedCount"
+        ).textContent =
+            `${selected.size} sélectionné(s)`;
+
+
+        document.getElementById(
+            "importButton"
+        ).disabled =
+            selected.size === 0;
+
+    }
+
+
+    // ========================================================
+    // REFRESH
+    // ========================================================
+
+    async function refreshContacts() {
+
+        const button =
+            document.getElementById(
+                "refreshButton"
+            );
+
+
+        const resultElement =
+            document.getElementById(
+                "refreshResult"
+            );
+
+
+        button.disabled =
+            true;
+
+
+        button.textContent =
+            "Actualisation...";
+
+
+        resultElement.textContent =
+            "Synchronisation avec WhatsApp...";
+
+
+        try {
+
+            const response =
+                await fetch(
+                    "/refresh",
+                    {
+                        method:
+                            "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json",
+                        },
+
+                        cache:
+                            "no-store",
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                alert(
+                    data.error ||
+                    "Erreur actualisation."
+                );
+
+
+                resultElement.textContent =
+                    "Erreur pendant l'actualisation.";
+
+
+                return;
+
+            }
+
+
+            /*
+             * On recharge réellement la liste
+             * depuis le backend après le refresh.
+             */
+
+            await loadContacts();
+
+
+            if (
+                data.added > 0
+            ) {
+
+                resultElement.textContent =
+                    `✅ ${data.added} nouveau(x) contact(s) ajouté(s) — ${data.count} au total.`;
+
+            } else {
+
+                resultElement.textContent =
+                    `✓ Actualisé — ${data.count} contact(s) au total.`;
+
+            }
+
+
+        } catch (error) {
+
+            console.error(
+                "Erreur refresh :",
+                error
+            );
+
+
+            resultElement.textContent =
+                "❌ Impossible d'actualiser les contacts.";
+
+
+            alert(
+                "Impossible d'actualiser les contacts."
+            );
+
+
+        } finally {
+
+            button.disabled =
+                false;
+
+            button.textContent =
+                "Actualiser";
+
+        }
+
+    }
+
+
+    // ========================================================
+    // IMPORT
+    // ========================================================
+
+    async function importContacts() {
+
+        if (
+            selected.size === 0
+        ) {
+
+            return;
+
+        }
+
+
+        const contactsToImport =
+            contacts.filter(
+                (contact) =>
+                    selected.has(
+                        contact.id
+                    )
+            );
+
+
+        console.log(
+            "Contacts sélectionnés :",
+            contactsToImport
+        );
+
+
+        alert(
+            `${contactsToImport.length} contact(s) sélectionné(s).`
+        );
+
+    }
+
+
+    // ========================================================
+    // ESCAPE HTML
+    // ========================================================
+
+    function escapeHtml(value) {
+
+        return String(
+            value ?? ""
+        )
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+    }
+
+
+    // ========================================================
+    // ESCAPE ATTRIBUT
+    // ========================================================
+
+    function escapeAttribute(value) {
+
+        return String(
+            value ?? ""
+        )
+        .replace(
+            /\\/g,
+            "\\\\"
+        )
+        .replace(
+            /'/g,
+            "\\'"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        );
+
+    }
+
+
+    // ========================================================
+    // POLLING STATUS
+    // ========================================================
+
+    setInterval(
+        loadStatus,
+        3000
+    );
+
+
+    // ========================================================
+    // START FRONTEND
+    // ========================================================
+
+    loadStatus();
+
+</script>
+
+</body>
+
+</html>
